@@ -2,7 +2,7 @@
 
 Asistente de composición con sugerencias explicadas (proyecto A) y transcriptor de audio a partitura (proyecto B). Todo corre en el navegador: el audio nunca sale del dispositivo.
 
-> Estado: fase A0, base del proyecto y modelo de canción.
+> Estado: fase A1, modelo de canción, teoría musical y reproducción con Tone.js.
 
 ## Arquitectura
 

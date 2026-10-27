@@ -1,0 +1,17 @@
+<div class="transport">
+  <button type="button" (click)="toggle()" [attr.aria-pressed]="playing()">
+    {{ playing() ? 'Detener' : 'Reproducir' }}
+  </button>
+
+  <label>
+    <input
+      type="checkbox"
+      [checked]="metronome()"
+      (change)="toggleMetronome($any($event.target).checked)"
+    />
+    Metrónomo
+  </label>
+
+  <span class="info">{{ song().tempo }} BPM</span>
+  <output class="position" aria-label="Compás y tiempo">{{ position() }}</output>
+</div>

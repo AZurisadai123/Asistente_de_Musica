@@ -23,6 +23,7 @@
     "@angular/router": "^21.2.0",
     "rxjs": "~7.8.0",
     "tonal": "^6.5.1",
+    "tone": "15.1.22",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
