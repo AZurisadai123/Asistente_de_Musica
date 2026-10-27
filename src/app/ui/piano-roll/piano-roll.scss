@@ -1,0 +1,117 @@
+:host {
+  display: block;
+  border: 1px solid #d0d4dc;
+  border-radius: 8px;
+  overflow: hidden;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px #8db4ff;
+  }
+}
+
+.scroller {
+  display: grid;
+  grid-template-columns: 28px max-content;
+  grid-template-rows: max-content max-content;
+  max-height: 520px;
+  overflow: auto;
+  background: #ffffff;
+}
+
+.ruler {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #f4f5f8;
+  border-right: 1px solid #d0d4dc;
+}
+
+.measure-number {
+  position: absolute;
+  right: 6px;
+  font-size: 11px;
+  color: #555c68;
+}
+
+.grid {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+
+  &.resize-cursor,
+  &.resize-cursor .note {
+    cursor: ns-resize;
+  }
+}
+
+.column.black {
+  fill: #f1f2f6;
+}
+
+.grid-line {
+  stroke: #e3e6ec;
+
+  &.strong {
+    stroke: #aab0bc;
+  }
+}
+
+.note {
+  fill: #4f7cff;
+  stroke: #2d55cc;
+  cursor: grab;
+
+  &.selected {
+    fill: #ff8a3d;
+    stroke: #c95f16;
+  }
+}
+
+.playhead {
+  stroke: #e5484d;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.corner,
+.keyboard {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+
+.corner {
+  left: 0;
+  z-index: 3;
+  background: #f4f5f8;
+  border-right: 1px solid #d0d4dc;
+  border-top: 2px solid #2f333b;
+}
+
+.keyboard {
+  display: block;
+  background: #2f333b;
+  border-top: 2px solid #2f333b;
+}
+
+.key {
+  fill: #ffffff;
+  stroke: #9aa1ad;
+
+  &.black {
+    fill: #2f333b;
+    stroke: #1b1e23;
+  }
+
+  &.active {
+    fill: #4f7cff;
+  }
+}
+
+.key-label {
+  font-size: 9px;
+  text-anchor: middle;
+  fill: #555c68;
+  pointer-events: none;
+}

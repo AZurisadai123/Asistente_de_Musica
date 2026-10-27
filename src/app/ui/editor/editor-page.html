@@ -1,0 +1,42 @@
+<p class="summary">{{ summary() }}</p>
+
+<div class="toolbar">
+  <app-transport [song]="store.song()" />
+
+  <label class="grid-select">
+    Rejilla
+    <select (change)="selectGrid($any($event.target).value)">
+      @for (option of gridOptions; track option.ticks) {
+        <option [value]="option.ticks" [selected]="option.ticks === grid()">
+          {{ option.label }}
+        </option>
+      }
+    </select>
+  </label>
+
+  <div class="history">
+    <button
+      type="button"
+      (click)="store.undo()"
+      [disabled]="!store.history().canUndo"
+      [title]="store.history().undoLabel ? 'Deshacer: ' + store.history().undoLabel : 'Deshacer'"
+    >
+      Deshacer
+    </button>
+    <button
+      type="button"
+      (click)="store.redo()"
+      [disabled]="!store.history().canRedo"
+      [title]="store.history().redoLabel ? 'Rehacer: ' + store.history().redoLabel : 'Rehacer'"
+    >
+      Rehacer
+    </button>
+  </div>
+</div>
+
+<app-piano-roll [grid]="grid()" />
+
+<p class="help">
+  Clic para crear una nota · arrastra para moverla · arrastra el borde superior para estirarla ·
+  clic derecho o Supr para borrar · Ctrl+Z deshace · Ctrl+Y rehace
+</p>

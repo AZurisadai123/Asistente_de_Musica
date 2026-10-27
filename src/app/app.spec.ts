@@ -19,11 +19,12 @@ describe('App', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('muestra el título y la canción de ejemplo', async () => {
+  it('muestra el editor con la canción de ejemplo', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Asistente de música');
     expect(compiled.textContent).toContain('Do mayor');
+    expect(compiled.querySelectorAll('rect.note')).toHaveLength(15);
   });
 });
