@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  border: 1px solid #d0d4dc;
+  border-radius: 8px;
+  overflow: hidden;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px #8db4ff;
+  }
+}
+
+.scroller {
+  display: grid;
+  grid-template-columns: 48px max-content;
+  grid-template-rows: 20px max-content;
+  max-height: 480px;
+  overflow: auto;
+}
+
+.corner,
+.ruler {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 20px;
+  background: #f4f5f8;
+  border-bottom: 1px solid #d0d4dc;
+}
+
+.corner {
+  left: 0;
+  z-index: 3;
+}
+
+.ruler {
+  position: sticky;
+}
+
+.measure-number {
+  position: absolute;
+  top: 2px;
+  padding-left: 4px;
+  font-size: 11px;
+  color: #555c68;
+}
+
+.keys {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.key {
+  fill: #ffffff;
+  stroke: #e1e4ea;
+
+  &.black {
+    fill: #2f333b;
+  }
+}
+
+.key-label {
+  font-size: 10px;
+  text-anchor: end;
+  fill: #555c68;
+}
+
+.grid {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+
+  &.resize-cursor,
+  &.resize-cursor .note {
+    cursor: ew-resize;
+  }
+}
+
+.row {
+  fill: #ffffff;
+
+  &.black {
+    fill: #f1f2f6;
+  }
+}
+
+.grid-line {
+  stroke: #e3e6ec;
+
+  &.strong {
+    stroke: #aab0bc;
+  }
+}
+
+.note {
+  fill: #4f7cff;
+  stroke: #2d55cc;
+  cursor: grab;
+
+  &.selected {
+    fill: #ff8a3d;
+    stroke: #c95f16;
+  }
+}

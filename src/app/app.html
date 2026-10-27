@@ -1,9 +1,4 @@
 <main class="shell">
   <h1>{{ title }}</h1>
-  <p>
-    {{ song.title }} · {{ keyName }} · {{ song.timeSignature.beats }}/{{
-      song.timeSignature.beatUnit
-    }}
-  </p>
-  <app-transport [song]="song" />
+  <app-editor-page />
 </main>
