@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   input,
@@ -13,32 +14,23 @@ import { Note } from '../../domain/model/song';
 import { measureStart, Ticks } from '../../domain/model/time';
 import { songLengthInMeasures } from '../../domain/services/measures';
 import { pitchName } from '../../domain/theory/pitch';
+import { PlaybackSession } from '../editor/playback-session';
 import { SongStore } from '../editor/song-store';
 import { DragState, draggedNote, hasChanged } from './note-drag';
-import {
-  gridHeight,
-  gridLines,
-  gridWidth,
-  hitTest,
-  isBlackKey,
-  noteRect,
-  PianoRollLayout,
-  pitchToY,
-  snapDown,
-  tickToX,
-  visiblePitches,
-  xToTick,
-  yToPitch,
-} from './piano-roll-geometry';
+import * as geo from './piano-roll-geometry';
 
 const PREVIEW_ID = '__preview__';
 const MIN_MEASURES = 8;
 const EXTRA_MEASURES = 2;
-/** Mi5: al abrir, la vista se centra en el registro habitual de una melodía. */
-const INITIAL_SCROLL_PITCH = 76;
-const BASE_LAYOUT = { lowestPitch: 36, highestPitch: 96, rowHeight: 14, pixelsPerQuarter: 64 };
+const KEYBOARD_HEIGHT = 72;
+/** Sol3: al abrir, la vista horizontal empieza cerca del registro de una melodía. */
+const INITIAL_LEFT_PITCH = 55;
+const BASE_LAYOUT = { lowestPitch: 36, highestPitch: 96, columnWidth: 14, pixelsPerQuarter: 48 };
 
-/** Editor de notas: clic para crear, arrastrar para mover o estirar, clic derecho para borrar. */
+/**
+ * Piano roll vertical con el teclado abajo: las notas caen hacia las teclas. Clic para crear,
+ * arrastrar para mover, arrastrar el borde superior para estirar, clic derecho para borrar.
+ */
 @Component({
   selector: 'app-piano-roll',
   templateUrl: './piano-roll.html',
@@ -55,25 +47,27 @@ export class PianoRoll {
   readonly grid = input<Ticks>(240);
 
   private readonly store = inject(SongStore);
+  protected readonly session = inject(PlaybackSession);
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   protected readonly selectedId = signal<string | null>(null);
   private readonly drag = signal<DragState | null>(null);
   private readonly preview = signal<Note | null>(null);
   protected readonly overResizeHandle = signal(false);
+  protected readonly keyboardHeight = KEYBOARD_HEIGHT;
 
-  protected readonly layout = computed<PianoRollLayout>(() => {
+  protected readonly layout = computed<geo.PianoRollLayout>(() => {
     const song = this.store.song();
     const measures = Math.max(MIN_MEASURES, songLengthInMeasures(song) + EXTRA_MEASURES);
     return { ...BASE_LAYOUT, measures, signature: song.timeSignature };
   });
-  protected readonly width = computed(() => gridWidth(this.layout()));
-  protected readonly height = computed(() => gridHeight(this.layout()));
-  protected readonly pitches = computed(() => visiblePitches(this.layout()));
-  protected readonly lines = computed(() => gridLines(this.layout(), this.grid()));
+  protected readonly width = computed(() => geo.gridWidth(this.layout()));
+  protected readonly height = computed(() => geo.gridHeight(this.layout()));
+  protected readonly pitches = computed(() => geo.visiblePitches(this.layout()));
+  protected readonly lines = computed(() => geo.gridLines(this.layout(), this.grid()));
   protected readonly measureLabels = computed(() =>
     Array.from({ length: this.layout().measures }, (_, i) => ({
       number: i + 1,
-      x: tickToX(measureStart(i, this.layout().signature), this.layout()),
+      y: geo.tickToY(measureStart(i, this.layout().signature), this.layout()),
     })),
   );
   protected readonly notes = computed(() => {
@@ -82,54 +76,71 @@ export class PianoRoll {
     const all = preview?.id === PREVIEW_ID ? [...notes, preview] : notes;
     return all.map((note) => ({
       id: note.id,
-      rect: noteRect(note, this.layout()),
+      rect: geo.noteRect(note, this.layout()),
       selected: note.id === this.selectedId() || note.id === PREVIEW_ID,
       label: pitchName(note.pitch),
     }));
+  });
+  protected readonly keys = computed(() => {
+    const layout = this.layout();
+    const all = this.pitches().map((pitch) => ({
+      pitch,
+      black: geo.isBlackKey(pitch),
+      rect: geo.isBlackKey(pitch)
+        ? geo.blackKeyRect(pitch, layout, KEYBOARD_HEIGHT)
+        : geo.whiteKeyRect(pitch, layout, KEYBOARD_HEIGHT),
+      label: pitch % 12 === 0 ? pitchName(pitch) : '',
+    }));
+    // Las negras se dibujan después para quedar encima de las blancas.
+    return [...all.filter((k) => !k.black), ...all.filter((k) => k.black)];
+  });
+  protected readonly playheadY = computed(() => geo.tickToY(this.session.tick(), this.layout()));
+  /** Alturas que suenan en la posición actual: sus teclas se iluminan. */
+  protected readonly activePitches = computed(() => {
+    if (!this.session.playing()) return new Set<number>();
+    const tick = this.session.tick();
+    const sounding = this.store
+      .song()
+      .notes.filter((n) => n.start <= tick && tick < n.start + n.duration);
+    return new Set(sounding.map((n) => n.pitch));
   });
 
   constructor() {
     afterNextRender(() => {
       const element = this.scroller()?.nativeElement;
       if (element) {
-        element.scrollTop = pitchToY(INITIAL_SCROLL_PITCH, this.layout());
+        element.scrollTop = element.scrollHeight;
+        element.scrollLeft = geo.pitchToX(INITIAL_LEFT_PITCH, this.layout());
       }
     });
-  }
-
-  protected rowY(pitch: number): number {
-    return pitchToY(pitch, this.layout());
-  }
-
-  protected isBlack(pitch: number): boolean {
-    return isBlackKey(pitch);
-  }
-
-  protected keyLabel(pitch: number): string {
-    return pitch % 12 === 0 ? pitchName(pitch) : '';
+    // Mientras suena, la vista baja para que la posición actual quede junto al teclado.
+    effect(() => {
+      const y = this.playheadY();
+      const element = this.scroller()?.nativeElement;
+      if (this.session.playing() && element) {
+        element.scrollTop = y - (element.clientHeight - KEYBOARD_HEIGHT);
+      }
+    });
   }
 
   protected onPointerDown(event: PointerEvent): void {
     if (event.button !== 0) return;
     const { x, y } = this.localPoint(event);
     const layout = this.layout();
-    const hit = hitTest(this.store.song().notes, x, y, layout);
-    const pointerTick = xToTick(x, layout);
-    const pointerPitch = yToPitch(y, layout);
+    const hit = geo.hitTest(this.store.song().notes, x, y, layout);
+    const pointerTick = geo.yToTick(y, layout);
+    const pointerPitch = geo.xToPitch(x, layout);
     if (hit) {
+      const mode = hit.zone === 'resize' ? 'resize' : 'move';
       this.selectedId.set(hit.note.id);
-      this.drag.set({
-        mode: hit.zone === 'resize' ? 'resize' : 'move',
-        original: hit.note,
-        pointerTick,
-        pointerPitch,
-      });
+      this.drag.set({ mode, original: hit.note, pointerTick, pointerPitch });
     } else {
       const grid = this.grid();
+      const start = geo.snapDown(pointerTick, grid);
       const note: Note = {
         id: PREVIEW_ID,
         pitch: pointerPitch,
-        start: snapDown(pointerTick, grid),
+        start,
         duration: grid,
         velocity: 96,
       };
@@ -145,13 +156,12 @@ export class PianoRoll {
     const { x, y } = this.localPoint(event);
     const layout = this.layout();
     if (!drag) {
-      const hit = hitTest(this.store.song().notes, x, y, layout);
+      const hit = geo.hitTest(this.store.song().notes, x, y, layout);
       this.overResizeHandle.set(hit?.zone === 'resize');
       return;
     }
-    this.preview.set(
-      draggedNote(drag, xToTick(x, layout), yToPitch(y, layout), this.grid(), layout),
-    );
+    const tick = geo.yToTick(y, layout);
+    this.preview.set(draggedNote(drag, tick, geo.xToPitch(x, layout), this.grid(), layout));
   }
 
   protected onPointerUp(): void {
@@ -174,7 +184,7 @@ export class PianoRoll {
   protected onContextMenu(event: MouseEvent): void {
     event.preventDefault();
     const { x, y } = this.localPoint(event);
-    const hit = hitTest(this.store.song().notes, x, y, this.layout());
+    const hit = geo.hitTest(this.store.song().notes, x, y, this.layout());
     if (hit) {
       this.deleteNote(hit.note.id);
     }

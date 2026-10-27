@@ -1,28 +1,9 @@
 <div class="scroller" #scroller>
-  <div class="corner"></div>
-  <div class="ruler" [style.width.px]="width()">
+  <div class="ruler" [style.height.px]="height()">
     @for (label of measureLabels(); track label.number) {
-      <span class="measure-number" [style.left.px]="label.x">{{ label.number }}</span>
+      <span class="measure-number" [style.top.px]="label.y - 16">{{ label.number }}</span>
     }
   </div>
-
-  <svg class="keys" [attr.height]="height()" width="48" aria-hidden="true">
-    @for (pitch of pitches(); track pitch) {
-      <rect
-        x="0"
-        [attr.y]="rowY(pitch)"
-        width="48"
-        [attr.height]="layout().rowHeight"
-        [class.black]="isBlack(pitch)"
-        class="key"
-      />
-      @if (keyLabel(pitch)) {
-        <text x="44" [attr.y]="rowY(pitch) + layout().rowHeight - 3" class="key-label">
-          {{ keyLabel(pitch) }}
-        </text>
-      }
-    }
-  </svg>
 
   <svg
     class="grid"
@@ -35,22 +16,23 @@
     (pointercancel)="cancelDrag()"
     (contextmenu)="onContextMenu($event)"
   >
-    @for (pitch of pitches(); track pitch) {
-      <rect
-        x="0"
-        [attr.y]="rowY(pitch)"
-        [attr.width]="width()"
-        [attr.height]="layout().rowHeight"
-        [class.black]="isBlack(pitch)"
-        class="row"
-      />
+    @for (key of keys(); track key.pitch) {
+      @if (key.black) {
+        <rect
+          class="column black"
+          [attr.x]="key.rect.x"
+          y="0"
+          [attr.width]="key.rect.width"
+          [attr.height]="height()"
+        />
+      }
     }
-    @for (line of lines(); track line.x) {
+    @for (line of lines(); track line.y) {
       <line
-        [attr.x1]="line.x"
-        [attr.x2]="line.x"
-        y1="0"
-        [attr.y2]="height()"
+        x1="0"
+        [attr.x2]="width()"
+        [attr.y1]="line.y"
+        [attr.y2]="line.y"
         [class.strong]="line.strong"
         class="grid-line"
       />
@@ -59,15 +41,50 @@
       <rect
         class="note"
         [class.selected]="note.selected"
-        [attr.x]="note.rect.x"
-        [attr.y]="note.rect.y + 1"
-        [attr.width]="note.rect.width"
-        [attr.height]="note.rect.height - 2"
+        [attr.x]="note.rect.x + 1"
+        [attr.y]="note.rect.y"
+        [attr.width]="note.rect.width - 2"
+        [attr.height]="note.rect.height"
         rx="3"
         [attr.data-note-id]="note.id"
       >
         <title>{{ note.label }}</title>
       </rect>
+    }
+    @if (session.playing()) {
+      <line
+        class="playhead"
+        x1="0"
+        [attr.x2]="width()"
+        [attr.y1]="playheadY()"
+        [attr.y2]="playheadY()"
+      />
+    }
+  </svg>
+
+  <div class="corner"></div>
+
+  <svg class="keyboard" [attr.width]="width()" [attr.height]="keyboardHeight" aria-hidden="true">
+    @for (key of keys(); track key.pitch) {
+      <rect
+        class="key"
+        [class.black]="key.black"
+        [class.active]="activePitches().has(key.pitch)"
+        [attr.x]="key.rect.x"
+        [attr.y]="key.rect.y"
+        [attr.width]="key.rect.width"
+        [attr.height]="key.rect.height"
+        rx="2"
+      />
+      @if (key.label) {
+        <text
+          class="key-label"
+          [attr.x]="key.rect.x + key.rect.width / 2"
+          [attr.y]="keyboardHeight - 6"
+        >
+          {{ key.label }}
+        </text>
+      }
     }
   </svg>
 </div>

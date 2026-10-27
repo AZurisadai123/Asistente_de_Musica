@@ -3,6 +3,7 @@ import { Ticks, TICKS_PER_QUARTER } from '../../domain/model/time';
 import { keyDisplayName } from '../../domain/theory/keys';
 import { PianoRoll } from '../piano-roll/piano-roll';
 import { Transport } from '../transport/transport';
+import { PlaybackSession } from './playback-session';
 import { SongStore } from './song-store';
 
 export interface GridOption {
@@ -23,7 +24,7 @@ export const GRID_OPTIONS: readonly GridOption[] = [
   templateUrl: './editor-page.html',
   styleUrl: './editor-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [SongStore],
+  providers: [SongStore, PlaybackSession],
 })
 export class EditorPage {
   protected readonly store = inject(SongStore);
