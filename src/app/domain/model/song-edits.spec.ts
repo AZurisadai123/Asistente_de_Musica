@@ -1,5 +1,12 @@
 import { Note } from './song';
-import { findNotes, insertNotes, removeNotesById, replaceNotes } from './song-edits';
+import {
+  findNotes,
+  insertNotes,
+  notesSpan,
+  removeNotesById,
+  replaceNotes,
+  shiftNotes,
+} from './song-edits';
 import { createEmptySong } from './song-factory';
 
 const n = (id: string, start: number, pitch = 60): Note => ({
@@ -38,5 +45,14 @@ describe('song-edits', () => {
 
   it('busca notas por id', () => {
     expect(findNotes(base, ['b']).map((x) => x.id)).toEqual(['b']);
+  });
+
+  it('desplaza notas en tiempo y altura', () => {
+    expect(shiftNotes([n('a', 0)], 240, -2)).toEqual([{ ...n('a', 240), pitch: 58 }]);
+  });
+
+  it('calcula el rango de tiempo de un grupo', () => {
+    expect(notesSpan([n('a', 960), n('b', 0)])).toEqual({ start: 0, end: 1440 });
+    expect(notesSpan([])).toBeNull();
   });
 });

@@ -1,0 +1,20 @@
+<div class="lane" [style.height.px]="height()">
+  @for (measure of measures(); track measure.index) {
+    <div class="cell" [style.top.px]="measure.top" [style.height.px]="measure.height">
+      <input
+        class="chord-input"
+        type="text"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="—"
+        [class.invalid]="measure.error"
+        [value]="measure.text"
+        [title]="measure.error ?? 'Acordes del compás, por ejemplo: C, Am F, G7'"
+        [attr.aria-label]="'Acordes del compás ' + (measure.index + 1)"
+        [attr.aria-invalid]="measure.error ? 'true' : null"
+        (change)="commit(measure.index, $any($event.target).value)"
+        (keydown.enter)="$any($event.target).blur()"
+      />
+    </div>
+  }
+</div>

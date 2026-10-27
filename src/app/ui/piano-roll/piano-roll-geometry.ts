@@ -28,6 +28,9 @@ export interface NoteHit {
   readonly zone: HitZone;
 }
 
+/** Rango de alturas del editor: de Do2 a Do7. */
+export const PIANO_ROLL_PITCH_RANGE = { lowestPitch: 36, highestPitch: 96 } as const;
+
 /** Píxeles del borde superior (el final) de una nota que sirven para estirarla. */
 export const RESIZE_HANDLE_PX = 6;
 
@@ -106,6 +109,29 @@ export function hitTest(
   return null;
 }
 
+/** Rectángulo normalizado entre dos esquinas cualesquiera. */
+export function rectFromPoints(ax: number, ay: number, bx: number, by: number): Rect {
+  return {
+    x: Math.min(ax, bx),
+    y: Math.min(ay, by),
+    width: Math.abs(bx - ax),
+    height: Math.abs(by - ay),
+  };
+}
+
+/** Notas que tocan el recuadro de selección. */
+export function notesInRect(notes: readonly Note[], box: Rect, layout: PianoRollLayout): Note[] {
+  return notes.filter((note) => {
+    const r = noteRect(note, layout);
+    return (
+      r.x < box.x + box.width &&
+      r.x + r.width > box.x &&
+      r.y < box.y + box.height &&
+      r.y + r.height > box.y
+    );
+  });
+}
+
 /** Inicio de la celda de la rejilla que contiene el tick. */
 export function snapDown(tick: Ticks, grid: Ticks): Ticks {
   return Math.floor(tick / grid) * grid;
@@ -136,4 +162,20 @@ export function whiteKeyRect(pitch: number, layout: PianoRollLayout, height: num
 
 export function blackKeyRect(pitch: number, layout: PianoRollLayout, height: number): Rect {
   return { x: pitchToX(pitch, layout), y: 0, width: layout.columnWidth, height: height * 0.62 };
+}
+
+export interface KeyboardKey {
+  readonly pitch: number;
+  readonly black: boolean;
+  readonly rect: Rect;
+}
+
+/** Teclas listas para dibujar: primero las blancas y después las negras, que van encima. */
+export function keyboardKeys(layout: PianoRollLayout, height: number): KeyboardKey[] {
+  const keys = visiblePitches(layout).map((pitch) => {
+    const black = isBlackKey(pitch);
+    const rect = black ? blackKeyRect(pitch, layout, height) : whiteKeyRect(pitch, layout, height);
+    return { pitch, black, rect };
+  });
+  return [...keys.filter((k) => !k.black), ...keys.filter((k) => k.black)];
 }

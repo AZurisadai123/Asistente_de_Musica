@@ -6,6 +6,8 @@ export interface Playback {
   /** Debe llamarse desde un gesto del usuario (clic o tecla). */
   play(song: Song, fromTick?: Ticks): Promise<void>;
   stop(): void;
+  /** Toca una nota suelta, por ejemplo al crearla o moverla en el editor. */
+  previewPitch(pitch: number): Promise<void>;
   isPlaying(): boolean;
   /** Posición actual, para mover el cursor del piano roll. */
   currentTick(): Ticks;

@@ -1,5 +1,5 @@
 import { Note } from '../../domain/model/song';
-import { DragState, draggedNote, hasChanged } from './note-drag';
+import { DragState, draggedNote, hasChanged, limitShift } from './note-drag';
 
 const bounds = { lowestPitch: 48, highestPitch: 72 };
 const original: Note = { id: 'a', pitch: 60, start: 480, duration: 480, velocity: 90 };
@@ -42,5 +42,25 @@ describe('hasChanged', () => {
     expect(hasChanged(original, { ...original })).toBe(false);
     expect(hasChanged(original, { ...original, pitch: 61 })).toBe(true);
     expect(hasChanged(original, { ...original, duration: 240 })).toBe(true);
+  });
+});
+
+describe('limitShift', () => {
+  const group: Note[] = [
+    { ...original, id: 'a', start: 240, pitch: 50 },
+    { ...original, id: 'b', start: 960, pitch: 70 },
+  ];
+
+  it('deja pasar un desplazamiento que cabe', () => {
+    expect(limitShift(group, 480, 1, bounds)).toEqual({ deltaTicks: 480, deltaPitch: 1 });
+  });
+
+  it('recorta para que ninguna nota empiece antes de 0 ni salga del rango', () => {
+    expect(limitShift(group, -1000, 10, bounds)).toEqual({ deltaTicks: -240, deltaPitch: 2 });
+    expect(limitShift(group, 0, -10, bounds)).toEqual({ deltaTicks: 0, deltaPitch: -2 });
+  });
+
+  it('un grupo vacío no se mueve', () => {
+    expect(limitShift([], 480, 3, bounds)).toEqual({ deltaTicks: 0, deltaPitch: 0 });
   });
 });

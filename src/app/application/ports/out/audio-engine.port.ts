@@ -9,6 +9,8 @@ export interface AudioEngine {
   unlock(): Promise<void>;
   /** Programa los eventos (tiempos relativos al arranque) y se detiene solo al llegar a durationSeconds. */
   start(events: readonly PlaybackEvent[], durationSeconds: number): void;
+  /** Toca un evento de inmediato, sin afectar la reproducción en curso. */
+  playNow(event: PlaybackEvent): void;
   stop(): void;
   isRunning(): boolean;
   /** Segundos transcurridos desde start(); 0 si no está sonando. */

@@ -35,6 +35,11 @@ export class PlaybackSession {
     this.sync();
   }
 
+  /** Toca una nota suelta al crearla o moverla. Los errores de audio no deben romper la edición. */
+  previewPitch(pitch: number): void {
+    this.playback.previewPitch(pitch).catch(() => undefined);
+  }
+
   async setMetronome(enabled: boolean): Promise<void> {
     this.metronomeState.set(enabled);
     await this.playback.setMetronome(enabled);

@@ -40,6 +40,12 @@ export class ToneAudioEngine implements AudioEngine {
     this.running = true;
   }
 
+  playNow(event: PlaybackEvent): void {
+    if (this.tone && this.instruments) {
+      this.instruments.trigger(event, this.tone.now());
+    }
+  }
+
   stop(): void {
     if (!this.tone) {
       return;

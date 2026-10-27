@@ -5,6 +5,8 @@
     }
   </div>
 
+  <app-chord-lane class="chords" [layout]="layout()" />
+
   <svg
     class="grid"
     [class.resize-cursor]="overResizeHandle()"
@@ -51,6 +53,15 @@
         <title>{{ note.label }}</title>
       </rect>
     }
+    @if (boxRect(); as box) {
+      <rect
+        class="selection-box"
+        [attr.x]="box.x"
+        [attr.y]="box.y"
+        [attr.width]="box.width"
+        [attr.height]="box.height"
+      />
+    }
     @if (session.playing()) {
       <line
         class="playhead"
@@ -76,13 +87,13 @@
         [attr.height]="key.rect.height"
         rx="2"
       />
-      @if (key.label) {
+      @if (keyLabel(key.pitch); as label) {
         <text
           class="key-label"
           [attr.x]="key.rect.x + key.rect.width / 2"
           [attr.y]="keyboardHeight - 6"
         >
-          {{ key.label }}
+          {{ label }}
         </text>
       }
     }

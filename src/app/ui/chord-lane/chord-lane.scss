@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.lane {
+  position: relative;
+  width: 72px;
+  background: #fafbfc;
+  border-right: 1px solid #d0d4dc;
+}
+
+.cell {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 4px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #aab0bc;
+}
+
+.chord-input {
+  width: 100%;
+  padding: 3px 4px;
+  font:
+    600 12px system-ui,
+    sans-serif;
+  text-align: center;
+  border: 1px solid #d0d4dc;
+  border-radius: 4px;
+  background: #ffffff;
+
+  &:focus {
+    outline: 2px solid #8db4ff;
+    border-color: transparent;
+  }
+
+  &.invalid {
+    border-color: #e5484d;
+    background: #fff1f1;
+  }
+}

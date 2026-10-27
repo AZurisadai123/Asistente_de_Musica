@@ -17,6 +17,7 @@ function fakePlayback(): Playback & { playing: boolean } {
     isPlaying() {
       return this.playing;
     },
+    previewPitch: async () => undefined,
     currentTick: () => 1920 + 480,
     setMetronome: vi.fn(async () => undefined),
     isMetronomeEnabled: () => false,

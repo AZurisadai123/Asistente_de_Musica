@@ -46,6 +46,29 @@ export function draggedNote(
   return { ...original, duration: Math.max(grid, end - original.start) };
 }
 
+/**
+ * Recorta un desplazamiento para que ninguna nota del grupo empiece antes de 0 ni salga del
+ * rango de alturas. Así un grupo se mueve junto y conserva su forma.
+ */
+export function limitShift(
+  notes: readonly Note[],
+  deltaTicks: number,
+  deltaPitch: number,
+  bounds: PitchBounds,
+): { deltaTicks: number; deltaPitch: number } {
+  if (notes.length === 0) return { deltaTicks: 0, deltaPitch: 0 };
+  const earliest = Math.min(...notes.map((n) => n.start));
+  const lowest = Math.min(...notes.map((n) => n.pitch));
+  const highest = Math.max(...notes.map((n) => n.pitch));
+  return {
+    deltaTicks: Math.max(deltaTicks, -earliest),
+    deltaPitch: Math.min(
+      Math.max(deltaPitch, bounds.lowestPitch - lowest),
+      bounds.highestPitch - highest,
+    ),
+  };
+}
+
 export function hasChanged(before: Note, after: Note): boolean {
   return (
     before.start !== after.start ||

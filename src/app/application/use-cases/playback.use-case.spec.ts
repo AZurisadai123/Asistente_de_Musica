@@ -19,6 +19,10 @@ class FakeAudioEngine implements AudioEngine {
     this.running = true;
     this.elapsed = 0;
   }
+  nowEvents: PlaybackEvent[] = [];
+  playNow(event: PlaybackEvent): void {
+    this.nowEvents.push(event);
+  }
   stop(): void {
     this.running = false;
   }
@@ -80,6 +84,13 @@ describe('PlaybackUseCase', () => {
     expect(restart.duration).toBe(3);
     expect(restart.events.some((e) => e.kind === 'click')).toBe(true);
     expect(playback.isMetronomeEnabled()).toBe(true);
+  });
+
+  it('toca una nota suelta sin iniciar la reproducción', async () => {
+    await playback.previewPitch(67);
+    expect(engine.unlocked).toBe(true);
+    expect(engine.nowEvents).toEqual([expect.objectContaining({ pitches: [67], time: 0 })]);
+    expect(engine.starts).toHaveLength(0);
   });
 
   it('activar el metrónomo detenido solo guarda la preferencia', async () => {

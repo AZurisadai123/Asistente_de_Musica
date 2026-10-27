@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Playback } from '../../application/ports/in/playback.port';
+import { EditorActions } from '../editor/editor-actions';
 import { PlaybackSession } from '../editor/playback-session';
 import { SongStore } from '../editor/song-store';
 import { ID_GENERATOR, PLAYBACK } from '../ports.tokens';
@@ -32,6 +33,7 @@ describe('PianoRoll', () => {
       stop() {
         this.playing = false;
       },
+      previewPitch: async () => undefined,
       isPlaying() {
         return this.playing;
       },
@@ -46,6 +48,7 @@ describe('PianoRoll', () => {
       providers: [
         SongStore,
         PlaybackSession,
+        EditorActions,
         { provide: ID_GENERATOR, useValue: { next: () => `id${++n}` } },
         { provide: PLAYBACK, useValue: playback },
       ],
@@ -57,9 +60,19 @@ describe('PianoRoll', () => {
     svg = fixture.nativeElement.querySelector('svg.grid');
   });
 
-  function pointer(type: string, x: number, y: number, button = 0): void {
-    svg.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button, bubbles: true }));
+  function pointer(type: string, x: number, y: number, button = 0, shiftKey = false): void {
+    const init = { clientX: x, clientY: y, button, shiftKey, bubbles: true };
+    svg.dispatchEvent(new MouseEvent(type, init));
     fixture.detectChanges();
+  }
+
+  function press(key: string, init: KeyboardEventInit = {}): void {
+    fixture.nativeElement.dispatchEvent(new KeyboardEvent('keydown', { key, ...init }));
+    fixture.detectChanges();
+  }
+
+  function selectedCount(): number {
+    return fixture.nativeElement.querySelectorAll('rect.note.selected').length;
   }
 
   it('dibuja el teclado debajo de la rejilla con una tecla por semitono', () => {
@@ -131,5 +144,62 @@ describe('PianoRoll', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('line.playhead')?.getAttribute('y1')).toBe(String(yFor(480)));
     expect(element.querySelectorAll('rect.key.active')).toHaveLength(1);
+  });
+
+  it('Mayús+arrastrar selecciona con un recuadro y arrastrar mueve todo el grupo', () => {
+    store.addNote(60, 0, 480);
+    store.addNote(64, 480, 480);
+    store.addNote(80, 0, 480);
+    fixture.detectChanges();
+    pointer('pointerdown', xFor(58), yFor(1200), 0, true);
+    pointer('pointermove', xFor(66), yFor(0) - 1, 0, true);
+    expect(fixture.nativeElement.querySelector('rect.selection-box')).not.toBeNull();
+    pointer('pointerup', xFor(66), yFor(0) - 1, 0, true);
+    expect(selectedCount()).toBe(2);
+
+    pointer('pointerdown', xFor(60), yFor(100));
+    pointer('pointermove', xFor(61), yFor(100 + 480));
+    pointer('pointerup', xFor(61), yFor(100 + 480));
+    const pitches = store.song().notes.map((n) => [n.pitch, n.start]);
+    expect(pitches).toEqual([
+      [80, 0],
+      [61, 480],
+      [65, 960],
+    ]);
+    expect(store.history().undoLabel).toBe('Mover notas');
+  });
+
+  it('Mayús+clic agrega o quita una nota de la selección', () => {
+    store.addNote(60, 0, 480);
+    store.addNote(64, 0, 480);
+    fixture.detectChanges();
+    pointer('pointerdown', xFor(60), yFor(100), 0, true);
+    pointer('pointerup', xFor(60), yFor(100), 0, true);
+    pointer('pointerdown', xFor(64), yFor(100), 0, true);
+    pointer('pointerup', xFor(64), yFor(100), 0, true);
+    expect(selectedCount()).toBe(2);
+    pointer('pointerdown', xFor(60), yFor(100), 0, true);
+    pointer('pointerup', xFor(60), yFor(100), 0, true);
+    expect(selectedCount()).toBe(1);
+  });
+
+  it('las flechas mueven la nota seleccionada', () => {
+    store.addNote(60, 0, 480);
+    fixture.detectChanges();
+    pointer('pointerdown', xFor(60), yFor(100));
+    pointer('pointerup', xFor(60), yFor(100));
+    press('ArrowUp', { shiftKey: true });
+    press('ArrowRight');
+    expect(store.song().notes[0]).toMatchObject({ pitch: 72, start: 240 });
+  });
+
+  it('escribir en una casilla de acordes no dispara atajos del piano roll', () => {
+    store.addNote(60, 0, 480);
+    fixture.detectChanges();
+    pointer('pointerdown', xFor(60), yFor(100));
+    pointer('pointerup', xFor(60), yFor(100));
+    const input = fixture.nativeElement.querySelector('input.chord-input') as HTMLInputElement;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+    expect(store.song().notes).toHaveLength(1);
   });
 });

@@ -9,6 +9,9 @@ import {
 import { Playback } from '../ports/in/playback.port';
 import { AudioEngine } from '../ports/out/audio-engine.port';
 
+const PREVIEW_SECONDS = 0.35;
+const PREVIEW_VELOCITY = 0.7;
+
 export class PlaybackUseCase implements Playback {
   private song: Song | null = null;
   private startTick: Ticks = 0;
@@ -31,6 +34,17 @@ export class PlaybackUseCase implements Playback {
 
   stop(): void {
     this.engine.stop();
+  }
+
+  async previewPitch(pitch: number): Promise<void> {
+    await this.engine.unlock();
+    this.engine.playNow({
+      kind: 'melody',
+      time: 0,
+      duration: PREVIEW_SECONDS,
+      pitches: [pitch],
+      velocity: PREVIEW_VELOCITY,
+    });
   }
 
   isPlaying(): boolean {

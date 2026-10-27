@@ -6,9 +6,12 @@ import {
   gridWidth,
   hitTest,
   isBlackKey,
+  keyboardKeys,
   noteRect,
+  notesInRect,
   PianoRollLayout,
   pitchToX,
+  rectFromPoints,
   snapDown,
   tickToY,
   whiteKeyRect,
@@ -94,5 +97,25 @@ describe('piano-roll-geometry (vertical)', () => {
       expect(rect.width).toBe(10);
       expect(rect.height).toBeLessThan(60);
     });
+  });
+
+  describe('selección con recuadro', () => {
+    it('normaliza el rectángulo sin importar la dirección del arrastre', () => {
+      expect(rectFromPoints(50, 80, 10, 20)).toEqual({ x: 10, y: 20, width: 40, height: 60 });
+    });
+
+    it('incluye las notas que tocan el recuadro', () => {
+      const other = { ...note, id: 'b', pitch: 70 };
+      const box = { x: 110, y: 250, width: 20, height: 5 };
+      expect(notesInRect([note, other], box, layout)).toEqual([note]);
+      expect(notesInRect([note, other], { x: 0, y: 0, width: 5, height: 5 }, layout)).toEqual([]);
+    });
+  });
+
+  it('keyboardKeys dibuja primero las blancas y después las negras', () => {
+    const keys = keyboardKeys(layout, 60);
+    expect(keys).toHaveLength(25);
+    const firstBlack = keys.findIndex((k) => k.black);
+    expect(keys.slice(firstBlack).every((k) => k.black)).toBe(true);
   });
 });
