@@ -1,4 +1,9 @@
 <main class="shell">
   <h1>{{ title }}</h1>
-  <p>Asistente de composición: en construcción (fase A0).</p>
+  <p>
+    {{ song.title }} · {{ keyName }} · {{ song.timeSignature.beats }}/{{
+      song.timeSignature.beatUnit
+    }}
+  </p>
+  <app-transport [song]="song" />
 </main>
